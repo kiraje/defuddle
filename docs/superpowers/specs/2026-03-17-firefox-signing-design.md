@@ -25,13 +25,13 @@ Add `browser_specific_settings` with a gecko ID and minimum Firefox version:
 ```json
 "browser_specific_settings": {
   "gecko": {
-    "id": "defuddle@kiraje",
+    "id": "{a3e4f5b2-1c7d-4e8a-9f0b-2d6c8e1a4b7f}",
     "strict_min_version": "132.0"
   }
 }
 ```
 
-- `id` — required by Mozilla to sign any extension. Email-like format, does not need to be a real domain.
+- `id` — required by Mozilla to sign any extension. UUID format (`{...}`) passes `web-ext lint` cleanly and is unique to this extension.
 - `strict_min_version: "132.0"` — enforces the minimum version required for `chrome.storage.session`.
 
 ### `package.json`
@@ -39,10 +39,10 @@ Add `browser_specific_settings` with a gecko ID and minimum Firefox version:
 Add `web-ext` as a dev dependency and a `sign` script:
 
 ```json
-"sign": "web-ext sign --channel=unlisted --source-dir=extension"
+"sign": "npm run build && web-ext sign --channel=unlisted --source-dir=extension"
 ```
 
-`web-ext` is Mozilla's official CLI for building, linting, and signing extensions.
+`web-ext` is Mozilla's official CLI for building, linting, and signing extensions. The `build` step is chained to ensure the `.js` bundles in `extension/` are current before signing.
 
 ### `README.md`
 
@@ -81,3 +81,4 @@ Required: Mozilla account + AMO API credentials (free).
 | `extension/manifest.json` | Add `browser_specific_settings` |
 | `package.json` | Add `web-ext` dev dep + `sign` script |
 | `README.md` | Add signing instructions |
+| `.gitignore` | Add `web-ext-artifacts/` |
