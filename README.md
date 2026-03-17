@@ -38,6 +38,28 @@ This bundles `extension/src/` into `extension/*.js` via esbuild.
 1. Open `about:debugging` → **This Firefox**
 2. Click **Load Temporary Add-on** → select `extension/manifest.json`
 
+## Sign for Firefox (Permanent Install)
+
+Firefox requires extensions to be signed by Mozilla for permanent installation. Use Mozilla's AMO unlisted channel to get a signed `.xpi` without a public listing.
+
+### Prerequisites
+
+1. Create a free [Mozilla account](https://accounts.firefox.com/signup)
+2. Go to [addons.mozilla.org/developers](https://addons.mozilla.org/developers/) → Tools → Manage API Keys
+3. Generate a **JWT issuer** (API key) and **JWT secret** (API secret)
+
+### Sign
+
+```bash
+WEB_EXT_API_KEY=your_jwt_issuer WEB_EXT_API_SECRET=your_jwt_secret npm run sign
+```
+
+This runs the build then submits to AMO. Mozilla auto-signs unlisted extensions in seconds.
+
+The signed `.xpi` is saved to `web-ext-artifacts/`. Install it by dragging it into Firefox or via `about:addons` → gear icon → Install Add-on From File.
+
+> **Note:** Never commit your API key or secret. Pass them as environment variables or store in a local `.env` file that is gitignored.
+
 ## Usage
 
 Navigate to any page, then:
