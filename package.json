@@ -1,27 +1,18 @@
 {
-	"name": "defuddle-worker",
-	"version": "0.0.0",
+	"name": "defuddle-extension",
+	"version": "1.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"test": "vitest",
-		"cf-typegen": "wrangler types",
-		"build:ext": "esbuild extension/src/content.ts --bundle --format=iife --footer:js=\"window.__defuddleResult\" --outfile=extension/content.js && esbuild extension/src/background.ts --bundle --format=iife --outfile=extension/background.js && esbuild extension/src/output.ts --bundle --format=iife --outfile=extension/output.js"
+		"build": "esbuild extension/src/content.ts --bundle --format=iife --footer:js=\"window.__defuddleResult\" --outfile=extension/content.js && esbuild extension/src/background.ts --bundle --format=iife --outfile=extension/background.js && esbuild extension/src/output.ts --bundle --format=iife --outfile=extension/output.js"
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.12.4",
 		"@types/node": "^25.3.3",
 		"esbuild": "^0.27.4",
-		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.70.0"
+		"typescript": "^5.5.2"
 	},
 	"dependencies": {
 		"@types/turndown": "^5.0.6",
 		"defuddle": "^0.14.0",
-		"linkedom": "^0.18.12",
 		"turndown": "^7.2.2"
 	}
 }

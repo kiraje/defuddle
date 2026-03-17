@@ -1,198 +1,90 @@
 # Defuddle
 
-A Cloudflare Worker that extracts the main content of any web page and returns clean Markdown. Built on top of [Defuddle](https://github.com/kepano/defuddle) with special handling for **X/Twitter** posts, including text, media, polls, quotes, and long-form Articles.
-
-![Defuddle — Live Demo](assets/cover.png)
-
-**🔗 Live demo:** [defuddle.thieunv.workers.dev](https://defuddle.thieunv.workers.dev/)
-
-**Examples:**
-```bash
-# Regular web page
-https://defuddle.thieunv.workers.dev/vividkit.dev
-
-# X/Twitter post
-https://defuddle.thieunv.workers.dev/x.com/thieunguyen_it/status/2021461660310044828
-
-# X Article (long-form with multiple mediums)
-https://defuddle.thieunv.workers.dev/x.com/trq212/status/2024574133011673516
-```
-
-## Features
-
-- **Any web page** → Markdown via Defuddle + Turndown
-- **X/Twitter posts** → rich Markdown via the [FxTwitter API](https://github.com/FxEmbed/FxEmbed)
-  - Tweet text with `t.co` link expansion
-  - Photos, videos, GIFs with thumbnails & duration
-  - X Articles (long-form DraftJS content with inline media)
-  - Quote tweets with media
-  - Polls with visual progress bars
-  - Engagement stats (❤️ likes, 🔁 retweets, 💬 replies, 👁 views)
-  - Community notes, replying-to context, broadcasts
-  - External media (YouTube embeds, etc.)
-- JSON and Markdown output formats
-- CORS support
-
-## Usage
-
-```bash
-# Get any web page as Markdown
-curl https://<your-worker>.workers.dev/medium.com/@richardhightower/claude-code-todos-to-tasks-5a1b0e351a1c
-
-# Get an X/Twitter post
-curl https://<your-worker>.workers.dev/x.com/thieunguyen_it/status/2021461660310044828
-
-# Get X Article (long-form with multiple mediums)
-curl https://<your-worker>.workers.dev/x.com/trq212/status/2024574133011673516
-
-# Get JSON output
-curl -H 'Accept: application/json' https://<your-worker>.workers.dev/x.com/thieunguyen_it/status/2021461660310044828
-```
-
-## Local Development
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) ≥ 18
-- A [Cloudflare account](https://dash.cloudflare.com/sign-up) (free tier works)
-
-### Setup
-
-```bash
-# Clone the repo
-git clone <repo-url>
-cd defuddle
-
-# Install dependencies
-npm install
-
-# Start local dev server
-npm run dev
-```
-
-The worker will be available at `http://localhost:8787`.
-
-```bash
-# Test locally
-curl http://localhost:8787/x.com/thieunguyen_it/status/2021461660310044828
-```
-
-### Run Tests
-
-```bash
-npm test
-```
-
-## Browser Extension
-
-A companion browser extension converts the current tab to Markdown using your existing browser session — works on any site including those protected by bot detection or login walls.
+A browser extension that converts any web page to clean Markdown — running entirely in your existing browser session. Works on sites protected by bot detection, login walls, or Cloudflare challenges that block server-side scrapers.
 
 **Supports:** Chrome (MV3) and Firefox 132+
 
-### Build
+## Features
+
+- Converts any web page to Markdown with YAML frontmatter
+- Runs in your browser session — bypasses bot protection and login walls
+- Toolbar icon click or keyboard shortcut (`Ctrl+Shift+D`)
+- Output opens in a new tab with a one-click copy button
+- Powered by [Defuddle](https://github.com/kepano/defuddle) + [Turndown](https://github.com/mixmark-io/turndown)
+
+## Build
+
+Requires [Node.js](https://nodejs.org/) ≥ 18.
 
 ```bash
-npm run build:ext
+git clone <repo-url>
+cd defuddle
+npm install
+npm run build
 ```
 
-### Load in Chrome
+This bundles `extension/src/` into `extension/*.js` via esbuild.
+
+## Load the Extension
+
+### Chrome
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked** → select the `extension/` directory
 
-### Load in Firefox
+### Firefox 132+
 
 1. Open `about:debugging` → **This Firefox**
 2. Click **Load Temporary Add-on** → select `extension/manifest.json`
 
-### Usage
+## Usage
 
-Click the **Defuddle toolbar icon** or press **Ctrl+Shift+D** (Mac: **MacCtrl+Shift+D**). A new tab opens with the page as Markdown plus a copy button.
+Navigate to any page, then:
 
-## Deploy to Cloudflare Workers
+- Click the **Defuddle toolbar icon**, or
+- Press **Ctrl+Shift+D** (Mac: **MacCtrl+Shift+D**)
 
-### First-time setup
+A new tab opens with the page converted to Markdown. Click **Copy Markdown** to copy it to the clipboard.
 
-1. **Login to Cloudflare CLI**
+### Output format
 
-   ```bash
-   npx wrangler login
-   ```
+Each conversion includes a YAML frontmatter block followed by the Markdown body:
 
-2. **Deploy**
+```markdown
+---
+title: "Page Title"
+url: "https://example.com/article"
+author: "Author Name"
+published: "2024-01-15"
+description: "Page description"
+domain: "example.com"
+word_count: 1420
+---
 
-   ```bash
-   npm run deploy
-   ```
+# Page Title
 
-   This runs `wrangler deploy` which:
-   - Bundles the TypeScript source
-   - Uploads to Cloudflare Workers
-   - Assigns a `*.workers.dev` subdomain
-
-3. **Verify**
-
-   ```bash
-   curl https://defuddle.<your-subdomain>.workers.dev/example.com
-   ```
-
-### Custom domain (optional)
-
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/) → Workers & Pages → `defuddle` → Settings → Domains & Routes
-2. Add a custom domain (must be on Cloudflare DNS) or a route pattern
-
-### Configuration
-
-The worker config is in [`wrangler.jsonc`](./wrangler.jsonc):
-
-```jsonc
-{
-  "name": "defuddle",        // Worker name (= subdomain)
-  "main": "src/index.ts",           // Entry point
-  "compatibility_date": "2026-03-01",
-  "compatibility_flags": ["nodejs_compat"]  // Required for linkedom
-}
+Content here...
 ```
-
-Key settings:
-- **`nodejs_compat`** — required for the `linkedom` DOM parser used by Defuddle
-- **`observability.enabled`** — enables Workers logs in the dashboard
 
 ## Project Structure
 
 ```
-src/
-├── index.ts        # Worker entry point, request routing
-├── convert.ts      # Core extraction logic (web pages + X/Twitter)
-└── polyfill.ts     # Workers runtime polyfills for DOM APIs
+extension/
+├── manifest.json       # MV3, Chrome + Firefox compatible
+├── output.html         # Output tab UI
+├── src/
+│   ├── background.ts   # Service worker: handles trigger, injects content script
+│   ├── content.ts      # Runs Defuddle + Turndown on the live DOM
+│   └── output.ts       # Reads result from storage, renders Markdown
+└── icons/              # 16/48/128px icons
 ```
 
-## API Reference
+Built files (`background.js`, `content.js`, `output.js`) are generated by `npm run build` and not committed to the repo.
 
-### `GET /<url>`
+## After Code Changes
 
-Extracts content from the given URL.
-
-**Response formats:**
-- `text/markdown` (default) — Markdown with YAML frontmatter
-- `application/json` — set `Accept: application/json` header
-
-**Frontmatter fields:**
-
-| Field | Description |
-|-------|-------------|
-| `title` | Page/tweet title |
-| `author` | Author name |
-| `published` | Publication date |
-| `source` | Original URL |
-| `domain` | Source domain |
-| `description` | Page description or tweet preview |
-| `word_count` | Content word count |
-| `likes` | ❤️ (X/Twitter only) |
-| `retweets` | 🔁 (X/Twitter only) |
-| `replies` | 💬 (X/Twitter only) |
-| `views` | 👁 (X/Twitter only) |
+Re-run `npm run build`, then go to `chrome://extensions` and click the refresh icon on the Defuddle card.
 
 ## License
 
