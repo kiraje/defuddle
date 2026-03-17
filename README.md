@@ -58,7 +58,7 @@ This runs the build then submits to AMO. Mozilla auto-signs unlisted extensions 
 
 The signed `.xpi` is saved to `web-ext-artifacts/`. Install it by dragging it into Firefox or via `about:addons` → gear icon → Install Add-on From File.
 
-> **Note:** Never commit your API key or secret. Pass them as environment variables or store in a local `.env` file that is gitignored.
+> **Note:** Never commit your API key or secret. Pass them as environment variables each time, or source them from a local file before running the command.
 
 ## Usage
 
