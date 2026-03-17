@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Defuddle",
+  "version": "1.0.0",
+  "description": "Convert any web page to clean Markdown",
+  "permissions": ["scripting", "storage", "activeTab", "notifications", "clipboardWrite"],
+  "action": {
+    "default_title": "Convert to Markdown",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "commands": {
+    "convert": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+D",
+        "mac": "MacCtrl+Shift+D"
+      },
+      "description": "Convert current page to Markdown"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

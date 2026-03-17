@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Defuddle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 32px 24px;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1e1e2e;
+    }
+    .title { font-size: 14px; font-weight: 500; color: #818cf8; letter-spacing: 0.05em; text-transform: uppercase; }
+    .copy-btn {
+      background: #1e1e2e;
+      color: #818cf8;
+      border: 1px solid #2d2d44;
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .copy-btn:hover { background: #2d2d44; color: #a5b4fc; }
+    .copy-btn.copied { background: #1a2e1a; color: #4ade80; border-color: #2d4d2d; }
+    .source-url {
+      font-size: 12px;
+      color: #4a5568;
+      margin-bottom: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .markdown-output {
+      background: #0f0f1a;
+      border: 1px solid #1e1e2e;
+      border-radius: 10px;
+      padding: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #c8d3f5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 200px;
+    }
+    .error-state { text-align: center; padding: 80px 24px; color: #64748b; }
+    .error-title { font-size: 18px; color: #ef4444; margin-bottom: 8px; }
+    .error-msg { font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container" id="container">
+    <div class="header">
+      <span class="title">Defuddle</span>
+      <button class="copy-btn" id="copyBtn">Copy Markdown</button>
+    </div>
+    <div class="source-url" id="sourceUrl"></div>
+    <pre class="markdown-output" id="output"></pre>
+  </div>
+  <script src="output.js"></script>
+</body>
+</html>
