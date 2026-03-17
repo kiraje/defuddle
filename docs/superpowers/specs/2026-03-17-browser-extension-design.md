@@ -7,44 +7,73 @@ A Chrome + Firefox browser extension that converts the current tab's web page to
 ## Goals
 
 - Convert any web page to Markdown using the user's existing browser session
-- Support Chrome and Firefox (Manifest V3)
+- Support Chrome (MV3) and Firefox 132+ (MV3)
 - Trigger via toolbar icon click or keyboard shortcut
 - Output clean Markdown with YAML frontmatter in a new tab
 
 ## Non-Goals
 
 - X/Twitter support (web pages only)
-- Firefox-specific APIs or polyfills
-- A popup UI before conversion
+- Publishing to browser extension stores
+- An options/settings page
+- Support for Firefox below version 132
 
 ## Architecture
 
 ### Approach: Dynamic Injection
 
-Background service worker listens for the toolbar click and keyboard shortcut. On trigger, it dynamically injects a content script into the active tab via `chrome.scripting.executeScript`. The content script processes the live DOM and returns the result. The background stores it in `chrome.storage.session` and opens the output tab.
+Background service worker listens for the toolbar click and keyboard shortcut. On trigger, it dynamically injects a content script into the active tab via `chrome.scripting.executeScript`. The content script processes the live DOM and returns the result. The background stores it in `chrome.storage.session` (available in Firefox 132+) using a UUID key and opens the output tab with that key as a query param.
 
 This avoids running a content script on every page load while keeping the trigger logic centralized in the background.
 
 ### Data Flow
 
 ```
-User clicks icon OR presses Ctrl+Shift+M
+User clicks icon OR presses Ctrl+Shift+D
         ↓
 background.js (service worker)
   → chrome.scripting.executeScript() injects content.js into active tab
+  → InjectionResult[] returned; extract results[0].result
+  → On error (undefined result, restricted page): show notification
         ↓
-content.js (runs in page context)
+content.js (runs in page context, returns value via executeScript)
   → new Defuddle(document).parse()        ← live DOM, no fetch needed
   → TurndownService().turndown(content)   ← HTML → Markdown
-  → returns { title, markdown, url, author, published }
+  → returns ConversionResult object (or throws on failure)
         ↓
 background.js
-  → chrome.storage.session.set({ result })
-  → chrome.tabs.create({ url: 'output.html' })
+  → const key = crypto.randomUUID()
+  → await chrome.storage.session.set({ [key]: result })
+  → chrome.tabs.create({ url: `output.html?key=${key}` })
         ↓
 output.js
-  → chrome.storage.session.get({ result })
-  → renders raw Markdown with YAML frontmatter + copy button
+  → const key = new URLSearchParams(location.search).get('key')
+  → chrome.storage.session.get(key)
+  → If no result: show error state
+  → Renders YAML frontmatter + raw Markdown using textContent (no innerHTML)
+  → Copy to Clipboard button
+```
+
+### ConversionResult Shape
+
+The content script returns (and storage stores) this object:
+
+```typescript
+interface ConversionResult {
+  title: string;
+  url: string;
+  markdown: string;
+  frontmatter: {
+    title: string;
+    url: string;
+    author?: string;
+    published?: string;
+    description?: string;
+    domain: string;
+    word_count: number;
+  };
+  error?: string; // set if extraction partially failed
+}
 ```
 
 ### File Structure
@@ -55,20 +84,20 @@ extension/
 ├── background.js          # Service worker: handles triggers, injects, opens tab
 ├── content.js             # Runs Defuddle + Turndown on live document
 ├── output.html            # New tab shown after conversion
-├── output.js              # Reads from storage, renders Markdown, copy button
+├── output.js              # Reads from storage via key, renders Markdown
 ├── icons/                 # 16/48/128px icons
 └── lib/
-    ├── defuddle.js        # Bundled IIFE from npm package
-    └── turndown.js        # Bundled IIFE from npm package
+    ├── defuddle.js        # Bundled IIFE: global name `Defuddle`
+    └── turndown.js        # Bundled IIFE: global name `TurndownService`
 ```
 
 ## Key Technical Decisions
 
-### Browser Compatibility (Chrome + Firefox MV3)
+### Browser Compatibility (Chrome + Firefox 132+)
 
-Firefox supports the `chrome.*` namespace in MV3, so no `browser.*` API polyfill is needed. The same JS runs on both browsers.
+Firefox supports the `chrome.*` namespace in MV3. `chrome.storage.session` was added in Firefox 132 (released October 2024) — this is the minimum supported version.
 
-Manifest differences are handled via a single `manifest.json` with MV3 syntax — Firefox accepts MV3 since Firefox 109.
+The same JS runs on both browsers with no polyfills.
 
 ### No polyfill.ts needed
 
@@ -80,35 +109,54 @@ The Worker required `polyfill.ts` to fake `DOMParser`, `document`, and `window` 
 - `storage` — required for `chrome.storage.session`
 - `activeTab` — required to access the current tab without broad host permissions
 
-### Data Passing
+### Restricted Pages
 
-`chrome.storage.session` is used to pass the conversion result from the content script (via background) to the output tab. This avoids URL length limits and keeps the data in memory only (cleared on browser restart).
+`chrome.scripting.executeScript` will fail on `chrome://`, `about:`, `file://`, extension pages, and the Chrome Web Store. The background should catch this and show a `chrome.notifications` message: "Can't convert this page."
 
-### Output Tab
+### Keyboard Shortcut
 
-The output tab (`output.html`) shows:
-- YAML frontmatter block (title, url, author, published, word_count)
-- Raw Markdown content
-- A "Copy to Clipboard" button
+`Ctrl+Shift+D` (Windows/Linux) / `MacCtrl+Shift+D` (Mac). Avoids `Ctrl+Shift+M` which conflicts with Firefox's built-in Responsive Design Mode shortcut.
 
-Styled to match the existing dark premium aesthetic of `public/index.html`.
+Declared in `manifest.json` under `commands`:
+```json
+"commands": {
+  "convert": {
+    "suggested_key": { "default": "Ctrl+Shift+D", "mac": "MacCtrl+Shift+D" },
+    "description": "Convert current page to Markdown"
+  }
+}
+```
 
-### Build System
+### Storage Key Collision Prevention
 
-`esbuild` bundles `defuddle` and `turndown` from existing `node_modules` into `extension/lib/` as IIFE globals. Added as a `build:ext` script in the root `package.json` — no separate package manager setup needed.
+Each conversion generates a `crypto.randomUUID()` key. The key is passed to `output.html` as a query param (`?key=<uuid>`). This prevents rapid conversions from overwriting each other in storage.
+
+### Race Condition Prevention
+
+`chrome.tabs.create` is called inside the resolved promise of `chrome.storage.session.set`, guaranteeing the data is written before the output tab loads.
+
+```js
+await chrome.storage.session.set({ [key]: result });
+await chrome.tabs.create({ url: `output.html?key=${key}` });
+```
+
+### esbuild Bundling
+
+Defuddle (`defuddle` npm package v0.8.x) ships an ES module at `dist/index.js`. Turndown ships at `lib/turndown.es.js`. Both are bundled as IIFE globals:
 
 ```json
-"build:ext": "esbuild ... --outfile=extension/lib/defuddle.js && esbuild ... --outfile=extension/lib/turndown.js"
+"build:ext": "esbuild node_modules/defuddle/dist/index.js --bundle --format=iife --global-name=Defuddle --outfile=extension/lib/defuddle.js && esbuild node_modules/turndown/lib/turndown.es.js --bundle --format=iife --global-name=TurndownService --outfile=extension/lib/turndown.js"
 ```
+
+Content Security Policy for `output.html` is MV3-default (`script-src 'self'`) — safe because Markdown is rendered via `textContent`, not `innerHTML`.
+
+### Output Tab Rendering
+
+Markdown is displayed using `element.textContent = markdownString` — plain text, no HTML parsing. This is safe under MV3's default CSP and avoids XSS risk from untrusted page content.
+
+The YAML frontmatter is shown as a fenced code block above the Markdown body.
 
 ## Loading the Extension
 
 - **Chrome**: `chrome://extensions` → Enable Developer Mode → Load Unpacked → select `extension/`
-- **Firefox**: `about:debugging` → This Firefox → Load Temporary Add-on → select `extension/manifest.json`
-
-## Out of Scope
-
-- Publishing to Chrome Web Store or Firefox Add-ons
-- Options/settings page
-- X/Twitter rich extraction (handled by the Worker)
-- Automatic re-conversion on page changes
+- **Firefox 132+**: `about:debugging` → This Firefox → Load Temporary Add-on → select `extension/manifest.json`
