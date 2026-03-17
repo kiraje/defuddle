@@ -3,12 +3,14 @@
 	"version": "1.0.0",
 	"private": true,
 	"scripts": {
-		"build": "esbuild extension/src/content.ts --bundle --format=iife --footer:js=\"window.__defuddleResult\" --outfile=extension/content.js && esbuild extension/src/background.ts --bundle --format=iife --outfile=extension/background.js && esbuild extension/src/output.ts --bundle --format=iife --outfile=extension/output.js"
+		"build": "esbuild extension/src/content.ts --bundle --format=iife --footer:js=\"window.__defuddleResult\" --outfile=extension/content.js && esbuild extension/src/background.ts --bundle --format=iife --outfile=extension/background.js && esbuild extension/src/output.ts --bundle --format=iife --outfile=extension/output.js",
+		"sign": "npm run build && web-ext sign --channel=unlisted --source-dir=extension"
 	},
 	"devDependencies": {
 		"@types/node": "^25.3.3",
 		"esbuild": "^0.27.4",
-		"typescript": "^5.5.2"
+		"typescript": "^5.5.2",
+		"web-ext": "^10.0.0"
 	},
 	"dependencies": {
 		"@types/turndown": "^5.0.6",
