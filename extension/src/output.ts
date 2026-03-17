@@ -50,13 +50,20 @@ async function init(): Promise<void> {
   outputEl.textContent = result.markdown;
 
   copyBtn.addEventListener('click', async () => {
-    await navigator.clipboard.writeText(result.markdown);
-    copyBtn.textContent = 'Copied!';
-    copyBtn.classList.add('copied');
-    setTimeout(() => {
-      copyBtn.textContent = 'Copy Markdown';
-      copyBtn.classList.remove('copied');
-    }, 2000);
+    try {
+      await navigator.clipboard.writeText(result.markdown);
+      copyBtn.textContent = 'Copied!';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy Markdown';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    } catch {
+      copyBtn.textContent = 'Copy failed';
+      setTimeout(() => {
+        copyBtn.textContent = 'Copy Markdown';
+      }, 2000);
+    }
   });
 }
 

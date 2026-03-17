@@ -50,7 +50,7 @@ async function convert(): Promise<void> {
   });
 }
 
-chrome.action.onClicked.addListener(() => { convert(); });
+chrome.action.onClicked.addListener(() => { convert().catch(console.error); });
 chrome.commands.onCommand.addListener((command) => {
-  if (command === 'convert') convert();
+  if (command === 'convert') convert().catch(console.error);
 });
