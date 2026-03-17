@@ -83,6 +83,33 @@ curl http://localhost:8787/x.com/thieunguyen_it/status/2021461660310044828
 npm test
 ```
 
+## Browser Extension
+
+A companion browser extension converts the current tab to Markdown using your existing browser session — works on any site including those protected by bot detection or login walls.
+
+**Supports:** Chrome (MV3) and Firefox 132+
+
+### Build
+
+```bash
+npm run build:ext
+```
+
+### Load in Chrome
+
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked** → select the `extension/` directory
+
+### Load in Firefox
+
+1. Open `about:debugging` → **This Firefox**
+2. Click **Load Temporary Add-on** → select `extension/manifest.json`
+
+### Usage
+
+Click the **Defuddle toolbar icon** or press **Ctrl+Shift+D** (Mac: **MacCtrl+Shift+D**). A new tab opens with the page as Markdown plus a copy button.
+
 ## Deploy to Cloudflare Workers
 
 ### First-time setup
