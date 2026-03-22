@@ -175,3 +175,6 @@ extension/output.js
 
 # Visual companion brainstorm files
 .superpowers/
+
+# web-ext signed artifacts
+web-ext-artifacts/
